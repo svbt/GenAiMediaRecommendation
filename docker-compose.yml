@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web-ui:
+    build:
+      context: ./services/web-ui
+      dockerfile: Dockerfile
+    container_name: media-recs-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./services/web-ui:/app
+      - /app/node_modules
+    command: ["npm", "start"]
