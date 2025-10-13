@@ -14,3 +14,26 @@ services:
       - ./services/web-ui:/app
       - /app/node_modules
     command: ["npm", "start"]
+    networks:
+      - app-network
+
+  # The Python/FastAPI authentication service
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    container_name: media-recs-auth
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/auth:/app
+    # Load environment variables from the .env file in the auth directory
+    env_file:
+      - ./services/auth/.env
+    # We don't need 'depends_on' since Kafka has been removed
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
