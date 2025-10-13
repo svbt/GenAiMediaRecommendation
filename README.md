@@ -12,13 +12,14 @@ Web UI ──(HTTP/gRPC)──> Auth Service ──(Kafka Pub)──> user-login
                                                                  ▼
 Web UI <──(WebSocket/Polling + gRPC Fallback)── Rec Service (Enriched Recs)
 ```
+
 Possible Git Repo Layout
 ```
 media-recs/
 ├─ docker-compose.yml
 ├─ services/
 │  ├─ web-ui/         (React)
-│  ├─ auth/           (Node/Express or Spring)
+│  ├─ auth/           (Python, Flask for rest Apis, integrate with Amazon APIs)
 │  ├─ user-service/   (Go/Java/Python)
 │  ├─ rec-orchestrator/ (FastAPI)
 │  ├─ llm-service/    (Python LangChain connector)
@@ -28,5 +29,19 @@ media-recs/
 ├─ docs/
 ├─ scripts/           (makefile, helpers)
 └─ README.md
+
+```
+
+Web-ui Folder structure
+
+```
+media-recs/
+├─ docker-compose.yml
+├─ services/
+│  └─ web-ui/
+│     ├─ Dockerfile
+│     ├─ package.json
+│     ├─ src/
+│     └─ public/
 
 ```
