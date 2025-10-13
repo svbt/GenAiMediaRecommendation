@@ -32,7 +32,7 @@ media-recs/
 
 ```
 
-Web-ui Folder structure
+web-ui/ folder structure
 
 ```
 media-recs/
@@ -44,4 +44,26 @@ media-recs/
 │     ├─ src/
 │     └─ public/
 
+```
+
+auth/ folder structure
+
+```
+auth/
+├── app/
+│   ├── __init__.py
+│   ├── core/
+│   │   ├── config.py         # Handles settings and environment variables
+│   │   ├── security.py       # JWT and password hashing logic
+│   │   └── oauth.py          # OAuth clients setup
+│   ├── api/
+│   │   └── v1/
+│   │       └── endpoints/
+│   │           └── auth.py   # API routes for login, token, etc.
+│   ├── dependencies.py       # Dependency injection for common objects
+│   └── main.py             # Main FastAPI application
+├── tests/
+├── .env.example
+├── Dockerfile
+└── requirements.txt
 ```
