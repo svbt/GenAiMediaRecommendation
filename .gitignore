@@ -1,0 +1,29 @@
+# Docker temporary files
+docker-compose.override.yml
+*.env
+
+# Kafka & Zookeeper data directories
+data/
+kafka1/
+kafka2/
+zookeeper/
+
+# Docker volumes (if you used named volumes instead of host paths)
+volumes/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# Node/npm or Python virtual envs (if you ever add scripts)
+node_modules/
+venv/
+__pycache__/

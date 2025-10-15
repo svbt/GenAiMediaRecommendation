@@ -1,3 +1,9 @@
+How to access Amazon API Authentication:
+https://developer.amazon.com/docs/app-submission-api/auth.html
+
+Amazon Security Profile Name for example below
+```GenAiMediaRec```
+
 How to run the service
 ```
 Set up your environment: Fill out the .env file with your Amazon credentials and Kafka broker address.
