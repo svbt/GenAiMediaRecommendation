@@ -37,3 +37,62 @@ services:
 networks:
   app-network:
     driver: bridge
+
+llm-service:
+  build:
+    context: ./services/llm-service
+    dockerfile: Dockerfile
+  ports:
+    - "8000:8000"
+  environment:
+    - OLLAMA_ENDPOINT=http://<cloud-ip>:11434/api/generate  # Replace with RunPod/AWS IP
+    - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    - POSTGRES_HOST=postgres
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=media_recs
+    - POSTGRES_USER=user
+    - POSTGRES_PASSWORD=password
+    - REDIS_HOST=redis
+    - REDIS_PORT=6379
+    - ENV=prod  # Set to 'local' for mocked responses
+  depends_on:
+    - kafka
+    - postgres
+    - redis
+embedding-service:
+  build:
+    context: ./services/llm-service  # Reuse llm-service folder for simplicity
+    dockerfile: Dockerfile
+  ports:
+    - "8001:8001"
+  command: uvicorn app.embedding:app --host 0.0.0.0 --port 8001
+  environment:
+    - POSTGRES_HOST=postgres
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=media_recs
+    - POSTGRES_USER=user
+    - POSTGRES_PASSWORD=password
+  depends_on:
+    - postgres
+postgres:
+  image: postgres:15
+  environment:
+    POSTGRES_DB: media_recs
+    POSTGRES_USER: user
+    POSTGRES_PASSWORD: password
+  volumes:
+    - ./init-pgvector.sql:/docker-entrypoint-initdb.d/init.sql
+redis:
+  image: redis:7
+kafka:
+  image: confluentinc/cp-kafka:7.5.0
+  environment:
+    KAFKA_BROKER_ID: 1
+    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+  depends_on:
+    - zookeeper
+zookeeper:
+  image: confluentinc/cp-zookeeper:7.5.0
+  environment:
+    ZOOKEEPER_CLIENT_PORT: 2181
