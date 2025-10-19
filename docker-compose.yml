@@ -59,6 +59,7 @@ llm-service:
     - kafka
     - postgres
     - redis
+
 embedding-service:
   build:
     context: ./services/llm-service  # Reuse llm-service folder for simplicity
@@ -74,6 +75,7 @@ embedding-service:
     - POSTGRES_PASSWORD=password
   depends_on:
     - postgres
+
 postgres:
   image: postgres:15
   environment:
@@ -82,6 +84,7 @@ postgres:
     POSTGRES_PASSWORD: password
   volumes:
     - ./init-pgvector.sql:/docker-entrypoint-initdb.d/init.sql
+
 redis:
   image: redis:7
 kafka:
@@ -92,6 +95,7 @@ kafka:
     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
   depends_on:
     - zookeeper
+    
 zookeeper:
   image: confluentinc/cp-zookeeper:7.5.0
   environment:
