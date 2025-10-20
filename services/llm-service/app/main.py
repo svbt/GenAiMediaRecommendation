@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from app.api.v1.endpoints import llm
-from app.kafka.consumer import create_kafka_consumer
 from app.kafka.producer import publish_message
-from app.dependencies import get_llm_client, get_embedding_client, get_kafka_producer, get_redis_client
+from app.dependencies import get_llm_client, get_embedding_client, get_kafka_producer, get_kafka_consumer, get_redis_client
 import json
 import asyncio
 
@@ -64,7 +63,7 @@ async def process_message(message, llm_client, embedding_client, producer, redis
 
 @app.on_event("startup")
 async def startup_event():
-    consumer = create_kafka_consumer()
+    consumer = get_kafka_consumer()
     consumer.subscribe(["rec.request"])
     llm_client = get_llm_client()
     embedding_client = get_embedding_client()
