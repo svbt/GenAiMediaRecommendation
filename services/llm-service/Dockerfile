@@ -1,10 +1,10 @@
-FROM python:3.10-slim
+# Inherit from the shared base image
+FROM genaimediarecommendation-base:latest
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
+# Only copy the application code
 COPY . .
 
+# NOTE: The command in the docker-compose.yml file will override this CMD
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -6,29 +6,29 @@ services:
   kafka-init:
     image: confluentinc/cp-kafka:7.5.0
     depends_on:
-      kafka:
+      kafka1:
         condition: service_healthy
     entrypoint: >
       bash -c "
         # Wait until Kafka is ready, using the bootstrap-server defined in our Kafka service
-        cub kafka-ready -b kafka:9092 1 20 &&
+        cub kafka-ready -b kafka1:9092 1 20 &&
         
         # Create rec.request topic
         kafka-topics --create --if-not-exists \
         --topic rec.request \
-        --bootstrap-server kafka:9092 \
+        --bootstrap-server kafka1:9092 \
         --partitions 1 --replication-factor 1 &&
         
         # Create llm.raw topic
         kafka-topics --create --if-not-exists \
         --topic llm.raw \
-        --bootstrap-server kafka:9092 \
+        --bootstrap-server kafka1:9092 \
         --partitions 1 --replication-factor 1 &&
         
         # Create rec.ready topic
         kafka-topics --create --if-not-exists \
         --topic rec.ready \
-        --bootstrap-server kafka:9092 \
+        --bootstrap-server kafka1:9092 \
         --partitions 1 --replication-factor 1
       "
     networks:
@@ -49,18 +49,29 @@ services:
     networks:
       - app-network
 
-  # The LLM service
-  llm-service:
+  # Build the shared base image that other services will use
+  base-image:
     build:
       context: ./services/llm-service
+      dockerfile: Dockerfile.base
+    image: genaimediarecommendation-base:latest
+
+  # The LLM service
+  llm-service:
+    # Use the pre-built base image, but specify the build context again
+    # to find the correct Dockerfile (relative to the context)
+    build:
+      context: ./services/llm-service
+      # The llm-service Dockerfile now uses `FROM genaimediarecommendation-base:latest`
       dockerfile: Dockerfile
+    image: genaimediarecommendation-llm-service:latest
     ports:
       - "8000:8000"
     environment:
       # OLLAMA_ENDPOINT should point to the correct IP and port for your Ollama service.
       # This assumes Ollama is external. For a local container, it should be adjusted.
       - OLLAMA_ENDPOINT=http://<cloud-ip>:11434/api/generate
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=media_recs
@@ -70,20 +81,27 @@ services:
       - REDIS_PORT=6379
       - ENV=prod
     depends_on:
-      kafka:
+      kafka1:
         condition: service_healthy
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # Add dependency on the base image build
+      # If fails as dependency not already built, do build manually first
+      # docker compose build base-image
+      base-image:
+        condition: service_completed_successfully
     networks:
       - app-network
 
   # The embedding service
   embedding-service:
+    # Use the same approach as llm-service
     build:
       context: ./services/llm-service
       dockerfile: Dockerfile
+    image: genaimediarecommendation-embedding-service:latest
     ports:
       - "8001:8001"
     command: uvicorn app.embedding:app --host 0.0.0.0 --port 8001
@@ -96,6 +114,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      # Add dependency on the base image build
+      base-image:
+        condition: service_completed_successfully
     networks:
       - app-network
 
@@ -118,17 +139,32 @@ services:
       - app-network
 
   # The main Kafka broker service
-  kafka:
+  kafka1:
     image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka1
+    hostname: kafka1
+    ports:
+      - "9092:9092"
+      - "19092:19092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:19092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - ./data/kafka1:/var/lib/kafka/data
     depends_on:
       zookeeper:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "kafka-topics.sh", "--bootstrap-server=kafka:9092", "--list"]
+      test: ["CMD", "kafka-topics.sh", "--bootstrap-server=kafka1:9092", "--list"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -141,6 +177,11 @@ services:
     image: confluentinc/cp-zookeeper:7.5.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - ./data/zookeeper:/var/lib/zookeeper
     healthcheck:
       test: ["CMD-SHELL", "echo 'ruok' | nc localhost 2181"]
       interval: 10s
