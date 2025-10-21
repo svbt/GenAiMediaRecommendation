@@ -13,6 +13,12 @@ services:
         # Wait until Kafka is ready, using the bootstrap-server defined in our Kafka service
         cub kafka-ready -b kafka1:9092 1 20 &&
         
+        # Create user.login topic
+        kafka-topics --create --if-not-exists \
+        --topic user.login \
+        --bootstrap-server kafka1:9092 \
+        --partitions 1 --replication-factor 1 &&
+
         # Create rec.request topic
         kafka-topics --create --if-not-exists \
         --topic rec.request \
