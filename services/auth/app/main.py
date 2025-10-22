@@ -9,6 +9,22 @@ from dotenv import load_dotenv
 import os
 import secrets
 import hashlib
+import json
+from confluent_kafka import Producer
+
+# --- Confluent Kafka Configuration ---
+# Create a single, application-wide producer instance for efficiency.
+# This should be done once at the module level, not inside a request handler.
+
+# Define a delivery report callback for proper error handling and logging.
+def delivery_report(err, msg):
+    if err is not None:
+        print(f"Message delivery failed: {err}")
+    else:
+        print(f"Message delivered to {msg.topic()} [{msg.partition()}]")
+
+# Instantiate the producer outside the request handler.
+producer = Producer({"bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka1:9092")})
 
 # Load environment variables
 load_dotenv()
@@ -137,11 +153,22 @@ async def amazon_callback(
         # Database operations
         if user_id not in db:
             db[user_id] = User(id=user_id, providers=["amazon"])
-            print(f"[{datetime.now(timezone.utc)}] (Kafka event skipped) Publishing user.login event for new user: {user_id}")
+            user_providers = ["amazon"]
         else:
             if "amazon" not in db[user_id].providers:
                 db[user_id].providers.append("amazon")
-            print(f"[{datetime.now(timezone.utc)}] (Kafka event skipped) Publishing user.login event for existing user: {user_id}")
+            user_providers = db[user_id].providers
+
+        # --- UPDATED LOGIC TO PUBLISH WITH confluent-kafka ---
+        login_event = {
+            "user_id": user_id,
+            "providers": user_providers,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        event_payload = json.dumps(login_event).encode('utf-8')
+
+        producer.produce('user.login', value=event_payload, callback=delivery_report)
+        producer.poll(0)
 
         # Create JWT token
         jwt_token = create_access_token({"sub": user_id, "providers": db[user_id].providers})
@@ -167,3 +194,9 @@ async def verify_token(token: str):
 @app.get("/")
 async def root():
     return {"message": "Auth Service is running. Use /auth/amazon/login to start."}
+
+@app.on_event("shutdown")
+def shutdown_event():
+    print("Flushing kafka producer...")
+    producer.flush()
+    print("Kafka producer flushed.")

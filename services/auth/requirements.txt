@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+confluent-kafka==2.5.0
 python-jose
 python-multipart
 python-dotenv
