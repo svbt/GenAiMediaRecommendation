@@ -93,11 +93,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      # Add dependency on the base image build
-      # If fails as dependency not already built, do build manually first
-      # docker compose build base-image
-      base-image:
-        condition: service_completed_successfully
     networks:
       - app-network
 
@@ -120,15 +115,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      # Add dependency on the base image build
-      base-image:
-        condition: service_completed_successfully
     networks:
       - app-network
 
   # The PostgreSQL database service with pgvector extension
   postgres:
-    image: postgres:15
+    # Use the official pgvector image with a specific PostgreSQL version
+    image: pgvector/pgvector:pg15
     environment:
       POSTGRES_DB: media_recs
       POSTGRES_USER: user
@@ -174,7 +167,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 45s
     networks:
       - app-network
 
