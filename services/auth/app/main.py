@@ -12,6 +12,9 @@ import hashlib
 import json
 from confluent_kafka import Producer
 
+# Load environment variables
+load_dotenv()
+
 # --- Confluent Kafka Configuration ---
 # Create a single, application-wide producer instance for efficiency.
 # This should be done once at the module level, not inside a request handler.
@@ -26,8 +29,6 @@ def delivery_report(err, msg):
 # Instantiate the producer outside the request handler.
 producer = Producer({"bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka1:9092")})
 
-# Load environment variables
-load_dotenv()
 
 # --- Configuration ---
 SECRET_KEY = os.getenv("SECRET_KEY")

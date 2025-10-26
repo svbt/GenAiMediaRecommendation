@@ -11,12 +11,12 @@ services:
     entrypoint: >
       bash -c "
         # Wait until Kafka is ready, using the bootstrap-server defined in our Kafka service
-        cub kafka-ready -b kafka1:9092 1 20 &&
+        cub kafka-ready -b kafka1:19092 1 20 &&
         
         # Create user.login topic
         kafka-topics --create --if-not-exists \
         --topic user.login \
-        --bootstrap-server kafka1:9092 \
+        --bootstrap-server kafka1:19092 \
         --partitions 1 --replication-factor 1 &&
 
         # Create rec.request topic
@@ -80,7 +80,7 @@ services:
       # OLLAMA_ENDPOINT should point to the correct IP and port for your Ollama service.
       # This assumes Ollama is external. For a local container, it should be adjusted.
       - OLLAMA_ENDPOINT=http://<cloud-ip>:11434/api/generate
-      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:19092
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=media_recs
@@ -131,12 +131,29 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - ./init-pgvector.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      # Use the pg_isready command to check database status.
+      # It connects to the specified host and port and checks if the server is ready.
+      # -U specifies the user, which is needed to authenticate the connection check.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - app-network
 
   # The Redis caching service
   redis:
     image: redis:7
+    healthcheck:
+      # Use the Redis CLI to send a PING command.
+      # The health check passes if the server responds with a "PONG".
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     networks:
       - app-network
 
@@ -151,10 +168,14 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,PLAINTEXT_HOST://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:19092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # Defines listeners with names for internal and external access
+      KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:19092,PLAINTEXT_EXTERNAL://0.0.0.0:9092
+      # Advertises the correct hostname/IP for each listener
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://kafka1:19092,PLAINTEXT_EXTERNAL://localhost:9092
+      # Maps listener names to their security protocol
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+      # Specifies which listener other brokers will use
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -166,7 +187,7 @@ services:
       zookeeper:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server=kafka1:9092", "--list"]
+      test: ["CMD", "kafka-topics", "--bootstrap-server=kafka1:19092", "--list"]
       interval: 10s
       timeout: 5s
       retries: 5
