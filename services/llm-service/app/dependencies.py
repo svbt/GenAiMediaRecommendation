@@ -2,6 +2,7 @@ from app.core.llm_client import LLMClient
 from app.core.embedding import EmbeddingClient
 from app.kafka.producer import create_kafka_producer
 from app.kafka.consumer import create_kafka_consumer
+from app.core.config import settings
 import redis
 
 def get_llm_client():
@@ -13,7 +14,7 @@ def get_embedding_client():
 def get_kafka_producer():
     return create_kafka_producer()
 
-def get_kafka_consumer();
+def get_kafka_consumer():
     return create_kafka_consumer()
 
 def get_redis_client():

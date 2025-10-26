@@ -22,19 +22,19 @@ services:
         # Create rec.request topic
         kafka-topics --create --if-not-exists \
         --topic rec.request \
-        --bootstrap-server kafka1:9092 \
+        --bootstrap-server kafka1:19092 \
         --partitions 1 --replication-factor 1 &&
         
         # Create llm.raw topic
         kafka-topics --create --if-not-exists \
         --topic llm.raw \
-        --bootstrap-server kafka1:9092 \
+        --bootstrap-server kafka1:19092 \
         --partitions 1 --replication-factor 1 &&
         
         # Create rec.ready topic
         kafka-topics --create --if-not-exists \
         --topic rec.ready \
-        --bootstrap-server kafka1:9092 \
+        --bootstrap-server kafka1:19092 \
         --partitions 1 --replication-factor 1
       "
     networks:
@@ -75,7 +75,7 @@ services:
       dockerfile: Dockerfile
     image: genaimediarecommendation-llm-service:latest
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       # OLLAMA_ENDPOINT should point to the correct IP and port for your Ollama service.
       # This assumes Ollama is external. For a local container, it should be adjusted.
