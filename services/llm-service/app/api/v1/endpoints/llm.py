@@ -5,6 +5,7 @@ import json
 
 router = APIRouter()
 
+# http://localhost:8001/api/v1/llm/generate
 @router.post("/generate")
 async def generate_recommendations(data: dict, llm_client: LLMClient = Depends(get_llm_client)):
     prompt = f"""

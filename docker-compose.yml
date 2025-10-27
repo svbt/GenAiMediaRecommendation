@@ -88,7 +88,7 @@ services:
       - POSTGRES_PASSWORD=password
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - ENV=prod
+      - ENV=local
     depends_on:
       kafka1:
         condition: service_healthy
