@@ -58,28 +58,17 @@ services:
     networks:
       - app-network
 
-  # Build the shared base image that other services will use
-  base-image:
-    build:
-      context: ./services/llm-service
-      dockerfile: Dockerfile.base
-    image: genaimediarecommendation-base:latest
-
   # The LLM service
   llm-service:
-    # Use the pre-built base image, but specify the build context again
-    # to find the correct Dockerfile (relative to the context)
     build:
-      context: ./services/llm-service
-      # The llm-service Dockerfile now uses `FROM genaimediarecommendation-base:latest`
-      dockerfile: Dockerfile
+      context: . # Set context to the project root
+      dockerfile: ./services/llm-service/Dockerfile # Reference the specific Dockerfile
     image: genaimediarecommendation-llm-service:latest
     ports:
-      - "8001:8000"
+      - "8001:8001"
+    volumes:
+      - ./services/llm-service:/app
     environment:
-      # OLLAMA_ENDPOINT should point to the correct IP and port for your Ollama service.
-      # This assumes Ollama is external. For a local container, it should be adjusted.
-      - OLLAMA_ENDPOINT=http://<cloud-ip>:11434/api/generate
       - KAFKA_BOOTSTRAP_SERVERS=kafka1:19092
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
@@ -101,14 +90,14 @@ services:
 
   # The embedding service
   embedding-service:
-    # Use the same approach as llm-service
     build:
-      context: ./services/llm-service
-      dockerfile: Dockerfile
+      context: . # Set context to the project root
+      dockerfile: ./services/embedding-service/Dockerfile # Reference the specific Dockerfile
     image: genaimediarecommendation-embedding-service:latest
     ports:
-      - "8001:8001"
-    command: uvicorn app.embedding:app --host 0.0.0.0 --port 8001
+      - "8002:8002"
+    volumes:
+      - ./services/embedding-service:/app
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432

@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings:
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "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")
     KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:19092")
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres")
     POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", 5432))

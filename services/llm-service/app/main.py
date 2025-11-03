@@ -7,12 +7,21 @@ import asyncio
 
 app = FastAPI(title="LLM Service")
 
+print("LLM Service")
+
 app.include_router(llm.router, prefix="/api/v1/llm", tags=["llm"])
 
+import json
+
 async def process_message(message, llm_client, embedding_client, producer, redis_client):
+    # Decode the message value (the JSON payload)
     data = json.loads(message.value().decode("utf-8"))
+    
+    # Extract user_id and programe_title from the JSON data
     user_id = data["userId"]
-    context = data["context"]
+    programe_title = data["programe_title"]
+
+    print("process message:", data)
     
     # Check Redis cache
     cached_recs = redis_client.get(f"recs:{user_id}")
@@ -21,15 +30,19 @@ async def process_message(message, llm_client, embedding_client, producer, redis
         return
 
     # Generate query embedding for candidate retrieval
-    query_text = f"{context['prefs']['genres']} {context.get('last_5_watched', [])}"
-    query_embedding = embedding_client.generate_embedding(query_text)
-    candidates = embedding_client.get_candidate_content(query_embedding, limit=10)
+    #query_text = f"{context['prefs']['genres']} {context.get('last_5_watched', [])}"
+    
+    # Make POST requests to the embedding-service's endpoint
+    response = embedding_client.post("/generate_embedding", json={"text": programe_title})
+    query_embedding = response.json()["embedding"]
+
+    response = embedding_client.post("/get_candidate_content", json={"query_embedding": query_embedding, "limit": 10})
+    candidates = response.json()["candidates"]
 
     # Build prompt with candidates
     prompt = f"""
-    System: Recommend 5 movies from the provided catalog based on user preferences.
-    User: Preferences: {json.dumps(context['prefs'])}
-    Last watched: {context.get('last_5_watched', [])}
+    System: Recommend 5 programes from the provided catalog based on programe title.
+    Programe Title: {programe_title}
     Catalog: {json.dumps(candidates)}
     Output: JSON list of 5 movie IDs with scores and reasons.
     """
@@ -63,6 +76,7 @@ async def process_message(message, llm_client, embedding_client, producer, redis
 
 @app.on_event("startup")
 async def startup_event():
+    print("startup_event: ")
     consumer = get_kafka_consumer()
     consumer.subscribe(["rec.request"])
     llm_client = get_llm_client()
@@ -73,5 +87,6 @@ async def startup_event():
     while True:
         msg = consumer.poll(1.0)
         if msg and not msg.error():
+            print("rec.request message")
             await process_message(msg, llm_client, embedding_client, producer, redis_client)
         await asyncio.sleep(0.1)

@@ -67,3 +67,24 @@ auth/
 ├── Dockerfile
 └── requirements.txt
 ```
+
+### Produce messages for topic rec.request
+
+```
+docker exec -it kafka1 bash
+```
+
+#### Producer
+```
+echo "user123:{\"requestId\": \"req123\", \"userId\": \"user123\", \"context\": {\"prefs\": {\"genres\": [\"Action\", \"Sci-Fi\"]}, \"last_5_watched\": [\"MovieA\", \"MovieB\"]}, \"ts\": 1678886400}" | kafka-console-producer --topic rec.request --bootstrap-server localhost:9092 --property "parse.key=true" --property "key.separator=:"
+```
+
+#### Consumer
+```
+kafka-console-consumer --bootstrap-server kafka1:19092 --topic=rec.request --from-beginning
+
+
+{"userId": "user123", "requestId": "req123", "context": {"prefs": {"genres": "Sci-Fi Action"}, "last_5_watched": ["Mission Impossible", "Taken"]}, "ts": 1678886400}
+{"requestId": "req123", "userId": "user123", "context": {"prefs": {"genres": ["Action", "Sci-Fi"]}, "last_5_watched": ["MovieA", "MovieB"]}, "ts": 1678886400}
+{"requestId": "req123", "userId": "user123", "context": {"prefs": {"genres": ["Action", "Sci-Fi"]}, "last_5_watched": ["MovieA", "MovieB"]}, "ts": 1678886400}
+```
