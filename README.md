@@ -103,11 +103,16 @@ docker exec -it kafka1 bash
 
 2. #### Producer
 ```
-echo "user123:{\"requestId\": \"req123\", \"userId\": \"user123\", \"programe_title\": \"Mission Impossible\", \"ts\": 1678886400}" | kafka-console-producer --topic rec.request --bootstrap-server localhost:9092 --property "parse.key=true" --property "key.separator=:"
+echo "user123:{\"requestId\": \"req123\", \"userId\": \"user123\", \"programe_title\": \"Taken\", \"ts\": 1678886400}" | kafka-console-producer --topic rec.request --bootstrap-server localhost:9092 --property "parse.key=true" --property "key.separator=:"
+
+echo "panpa:{\"requestId\": \"req123\", \"userId\": \"panpa\", \"programe_title\": \"Spiderman\", \"ts\": 1678886400}" | kafka-console-producer --topic rec.request --bootstrap-server localhost:9092 --property "parse.key=true" --property "key.separator=:"
 ```
 
 3. #### Consumer
 ```
+
+
+
 kafka-console-consumer --bootstrap-server kafka1:19092 --topic=rec.request --from-beginning
 
 {"requestId": "req123", "userId": "user123", "programe_title": "Mission Impossible", "ts": 1678886400}

@@ -28,9 +28,6 @@ async def process_message(message, llm_client, embedding_client, producer, redis
     if cached_recs:
         publish_message(producer, "rec.ready", cached_recs)
         return
-
-    # Generate query embedding for candidate retrieval
-    #query_text = f"{context['prefs']['genres']} {context.get('last_5_watched', [])}"
     
     # Make POST requests to the embedding-service's endpoint
     response = embedding_client.post("/generate_embedding", json={"text": programe_title})
@@ -41,13 +38,22 @@ async def process_message(message, llm_client, embedding_client, producer, redis
 
     # Build prompt with candidates
     prompt = f"""
-    System: Recommend 5 programes from the provided catalog based on programe title.
-    Programe Title: {programe_title}
+    System: Recommend exactly 5 movies that are similar to the provided Movie Title. 
+    Also, for each recommendation, specify its OTT provider (e.g., Netflix, Hulu, etc.) and the movie title itself if that information is available in the catalog data.
+    Respond *only* with a JSON list containing 5 items. Each item must have 'contentId', 'title' (the movie title), 'score' (a float from 0 to 1), 'reason' (why it's similar), and 'provider' (the OTT provider name).
+
+    Movie Title: {programe_title}
+
     Catalog: {json.dumps(candidates)}
-    Output: JSON list of 5 movie IDs with scores and reasons.
+
+    Output format example:
+    [
+      {{"contentId": "m-789", "title": "Spectre", "score": 0.95, "reason": "Action-packed spy thriller, similar themes.", "provider": "Netflix"}},
+      {{"contentId": "m-234", "title": "Tenet", "score": 0.88, "reason": "High-stakes mission and suspense.", "provider": "Hulu"}}
+    ]
     """
 
-    # Call LLM (Mistral 7B)
+    # Call OpenAI APIs
     llm_response = llm_client.generate_recommendations(prompt)
     llm_output = llm_response["response"]
 
