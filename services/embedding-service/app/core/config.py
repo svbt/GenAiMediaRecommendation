@@ -12,6 +12,6 @@ class Settings:
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
     REDIS_HOST = os.getenv("REDIS_HOST", "redis")
     REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-    ENV = os.getenv("ENV", "prod")
+    ENV = os.getenv("ENV", "local")
 
 settings = Settings()
