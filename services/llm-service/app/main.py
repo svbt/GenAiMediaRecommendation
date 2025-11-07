@@ -31,6 +31,7 @@ async def process_message(message, llm_client, embedding_client, producer, redis
     
     # Make POST requests to the embedding-service's endpoint
     response = embedding_client.post("/generate_embedding", json={"text": programe_title})
+    print("response:", response.json())
     query_embedding = response.json()["embedding"]
 
     response = embedding_client.post("/get_candidate_content", json={"query_embedding": query_embedding, "limit": 10})
