@@ -40,24 +40,6 @@ services:
     networks:
       - app-network
 
-  # The Python/FastAPI authentication service
-  auth:
-    build:
-      context: ./services/auth
-      dockerfile: Dockerfile
-    container_name: media-recs-auth
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./services/auth:/app
-    env_file:
-      - ./services/auth/.env
-    depends_on:
-      kafka1:
-        condition: service_healthy
-    networks:
-      - app-network
-
   # The LLM service
   llm-service:
     build:
