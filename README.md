@@ -2,7 +2,7 @@
 
 ## High Level Diagram
 
-![Alt text for the image](images/highlevel.png)
+![Alt text for the image](images/highlevel_diag.png)
 
 
 ## Getting started
