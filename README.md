@@ -4,6 +4,9 @@
 
 ![Alt text for the image](images/highlevel_diag.png)
 
+## AI Technique Used
+
+![Alt text for the image](images/deep-learning-pipeline.png)
 
 ## Getting started
 ### 1 Build and start the services
