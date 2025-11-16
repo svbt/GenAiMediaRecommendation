@@ -1,24 +1,15 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Dashboard from "./pages/Dashboard";
+// frontend/src/App.tsx
+import { Routes, Route } from "react-router-dom"
+import LoginPage from "./pages/LoginPage"
+import ProtectedRoute from "./components/ProtectedRoute"
+import Dashboard from "./pages/Dashboard"
 
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
-  );
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="*" element={<LoginPage />} />  {/* important fallback */}
+    </Routes>
+  )
 }
-
-export default App;
